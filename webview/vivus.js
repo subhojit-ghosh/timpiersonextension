@@ -152,15 +152,16 @@
     snippetNode.style.resize = "none";
     snippetContainerNode.style.resize = "none";
 
-    setTimeout(() => {
-      domtoimage.toBlob(snippetContainerNode, config).then((blob) => {
-        snippetNode.style.resize = "";
-        snippetContainerNode.style.resize = "";
-        serializeBlob(blob, (serializedBlob) => {
-          shoot(serializedBlob);
-        });
-      });
-    }, 1000);
+    // setTimeout(() => {
+    //   domtoimage.toBlob(snippetContainerNode, config).then((blob) => {
+    //     snippetNode.style.resize = "";
+    //     snippetContainerNode.style.resize = "";
+    //     serializeBlob(blob, (serializedBlob) => {
+    //       shoot(serializedBlob);
+    //     });
+    //   });
+    // }, 1000);
+    shoot(document.getElementsByTagName('html')[0].outerHTML);
   }
 
   function shootSnippet() {

@@ -1,11 +1,11 @@
-import * as path from "path";
 import * as fs from "fs";
-import * as vscode from "vscode";
+import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
+import * as vscode from "vscode";
 
 const writeSerializedBlobToFile = (serializeBlob: any, fileName: any) => {
-  const bytes = new Uint8Array(serializeBlob.split(","));
-  fs.writeFileSync(fileName, Buffer.from(bytes));
+  // const bytes = new Uint8Array(serializeBlob.split(","));
+  fs.writeFileSync(fileName, serializeBlob);
 };
 
 export function activate(context: vscode.ExtensionContext) {
@@ -41,7 +41,10 @@ export function activate(context: vscode.ExtensionContext) {
       panel.webview.postMessage({
         type: "restore",
         innerHTML: state.innerHTML,
-        bgColor: context.globalState.get("printallfiles.bgColor", "#2e3440"),
+        bgColor: context.globalState.get(
+          "timpiersonextension.bgColor",
+          "#2e3440"
+        ),
       });
       const selectionListener = setupSelectionSync();
       panel.onDidDispose(() => {
@@ -79,7 +82,7 @@ export function activate(context: vscode.ExtensionContext) {
         const fontFamily =
           vscode.workspace.getConfiguration("editor").fontFamily;
         const bgColor = context.globalState.get(
-          "printallfiles.bgColor",
+          "timpiersonextension.bgColor",
           "#2e3440"
         );
         panel.webview.postMessage({
@@ -94,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
           path.join(
             // @ts-ignore
             vscode.workspace.workspaceFolders[0].uri.fsPath,
-            "output-code-images"
+            "output-code-snapshots"
           ),
           {
             recursive: true,
@@ -105,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
           path.join(
             // @ts-ignore
             vscode.workspace.workspaceFolders[0].uri.fsPath,
-            "output-code-images"
+            "output-code-snapshots"
           )
         );
 
@@ -123,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   vscode.workspace.onDidChangeConfiguration((e) => {
     if (
-      e.affectsConfiguration("printallfiles") ||
+      e.affectsConfiguration("timpiersonextension") ||
       e.affectsConfiguration("editor")
     ) {
       syncSettings();
@@ -137,22 +140,24 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.window.showTextDocument(doc, {
         preview: false,
       });
-      await vscode.commands.executeCommand("editor.action.selectAll");
-      await vscode.commands.executeCommand(
-        "editor.action.clipboardCopyWithSyntaxHighlightingAction"
-      );
-      panel.webview.postMessage({
-        type: "update",
-      });
-      await vscode.commands.executeCommand(
-        "workbench.action.closeActiveEditor"
-      );
-      panel.webview.postMessage({
-        type: "shootall",
-        data: {
-          name: file.path.split("/").reverse()[0],
-        },
-      });
+      setTimeout(async () => {
+        await vscode.commands.executeCommand("editor.action.selectAll");
+        await vscode.commands.executeCommand(
+          "editor.action.clipboardCopyWithSyntaxHighlightingAction"
+        );
+        await vscode.commands.executeCommand(
+          "workbench.action.closeActiveEditor"
+        );
+        panel.webview.postMessage({
+          type: "update",
+        });
+        panel.webview.postMessage({
+          type: "shootall",
+          data: {
+            name: file.path.split("/").reverse()[0],
+          },
+        });
+      }, 5000);
     } catch (error) {
       console.log(error);
     }
@@ -165,8 +170,8 @@ export function activate(context: vscode.ExtensionContext) {
           const filePath = path.join(
             // @ts-ignore
             vscode.workspace.workspaceFolders[0].uri.fsPath,
-            "output-code-images",
-            data.name + ".png"
+            "output-code-snapshots",
+            data.name + ".html"
           );
           writeSerializedBlobToFile(data.serializedBlob, filePath);
           if (shootFiles.length) {
@@ -183,7 +188,7 @@ export function activate(context: vscode.ExtensionContext) {
           panel.webview.postMessage({
             type: "restoreBgColor",
             bgColor: context.globalState.get(
-              "printallfiles.bgColor",
+              "timpiersonextension.bgColor",
               "#2e3440"
             ),
           });
@@ -191,7 +196,10 @@ export function activate(context: vscode.ExtensionContext) {
           syncSettings();
           break;
         case "updateBgColor":
-          context.globalState.update("printallfiles.bgColor", data.bgColor);
+          context.globalState.update(
+            "timpiersonextension.bgColor",
+            data.bgColor
+          );
           break;
         case "invalidPasteContent":
           vscode.window.showInformationMessage(
@@ -203,7 +211,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function syncSettings() {
-    const settings = vscode.workspace.getConfiguration("printallfiles");
+    const settings = vscode.workspace.getConfiguration("timpiersonextension");
     const editorSettings = vscode.workspace.getConfiguration("editor", null);
     panel.webview.postMessage({
       type: "updateSettings",
